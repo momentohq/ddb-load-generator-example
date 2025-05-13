@@ -1,9 +1,7 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, env, str::FromStr};
 
 use lambda_http::{http::request::Parts, Body, Error, Request, Response};
 use redis::Commands;
-
-// arn:aws:lambda:us-west-2:458249522335:function:ddb-lambda-loader
 
 /// This is the main body for the function.
 /// Write your code inside it.
@@ -41,7 +39,8 @@ pub(crate) async fn function_handler(event: Request) -> Result<Response<Body>, E
         }
     }
     headers_of_unknown_provenance.extend(hahaha_real_headers);
-    // and now we have replaced the clobbered headers from who knows where with the real ones we hahaha-'d in the client to work around whatever aws did with the original headers...
+    // and now we have replaced the clobbered headers from who knows where with the real
+    // ones we hahaha-'d in the client to work around what aws would do to the headers otherwise.
     let mut headers = headers_of_unknown_provenance;
 
     tracing::info!("headers: {headers:?}");
@@ -141,7 +140,8 @@ async fn handle_get_item(
     let cache_key: String = serde_json::to_string(&request)?;
 
     let client = redis::Client::open(
-        "rediss://ddbcache-2rmprn.serverless.usw2.cache.amazonaws.com:6379/#insecure",
+        // like "rediss://ddbcache-2rmqrn.serverless.usw2.cache.amazonaws.com:6379/#insecure",
+        env::var("REDIS_URL").expect("must set REDIS_URL environment variable"),
     )?;
     let mut connection = client.get_connection()?;
 
