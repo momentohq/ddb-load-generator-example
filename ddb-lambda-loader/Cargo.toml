@@ -1,0 +1,14 @@
+[package]
+name = "ddb-lambda-loader"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lambda_http = "0.13.0"
+
+redis = { version = "0", features = ["tls-rustls", "tls-rustls-insecure"] }
+reqwest = { version = "0", default-features = false, features = ["rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+tokio = { version = "1", features = ["macros"] }
+tracing = { version = "0" }

@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "ddb-lambda-loader",
+    "ddb-load-tester",
+]

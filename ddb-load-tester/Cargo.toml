@@ -1,0 +1,21 @@
+[package]
+name = "ddb-load-tester"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap                    = { version = "4", features = ["derive"] }
+env_logger              = { version = "0" }
+exponential-histogram   = { version = "0" }
+goodmetrics             = { version = "7" }
+http                    = { version = "1" }
+log                     = { version = "0" }
+rand                    = { version = "0" }
+tokio                   = { version = "1", features = ["full"] }
+tokio-rustls            = { version = "0.26.2" }
+webpki-roots            = { version = "0" }
+
+aws-smithy-runtime-api  = { version = "1" }
+aws-config              = { version = "1" }
+aws-sdk-dynamodb        = { version = "1" }
+
