@@ -8,6 +8,7 @@ use item_generator::ItemGenerator;
 use load_generator_task::load_generator_task;
 use metrics::Metrics;
 use proxy_interceptor::ProxyInterceptor;
+use proxy_interceptor_for_lambda::ProxyInterceptorForLambda;
 use tokio::task::JoinSet;
 
 mod args;
@@ -16,6 +17,7 @@ mod item_generator;
 mod load_generator_task;
 mod metrics;
 mod proxy_interceptor;
+mod proxy_interceptor_for_lambda;
 
 fn main() {
     let args = Args::parse();
@@ -58,13 +60,17 @@ async fn amain(args: Args) {
     }
     let config = if let Some(accelerator_url) = &args.accelerator_url {
         log::info!("using accelerator url: {accelerator_url}");
-        config.interceptor(ProxyInterceptor::new(
-            accelerator_url.clone(),
-            args.scenario
-                .as_ref()
-                .map(|s| s == "lambda")
-                .unwrap_or_default(),
-        ))
+        if args
+            .scenario
+            .as_ref()
+            .map(|s| s == "lambda")
+            .unwrap_or_default()
+        {
+            // lambda requires a special case interceptor
+            config.interceptor(ProxyInterceptorForLambda::new(accelerator_url.clone()))
+        } else {
+            config.interceptor(ProxyInterceptor::new(accelerator_url.clone()))
+        }
     } else {
         config
     };

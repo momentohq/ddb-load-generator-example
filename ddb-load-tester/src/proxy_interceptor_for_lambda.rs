@@ -1,17 +1,17 @@
 /// I have to modify the request uri after it is signed. It is the Function's job to replace
 /// the request uri with x-uri.
 #[derive(Debug)]
-pub struct ProxyInterceptor {
+pub struct ProxyInterceptorForLambda {
     proxy_uri: String,
 }
-impl ProxyInterceptor {
+impl ProxyInterceptorForLambda {
     pub fn new(value: String) -> Self {
         Self { proxy_uri: value }
     }
 }
-impl aws_sdk_dynamodb::config::Intercept for ProxyInterceptor {
+impl aws_sdk_dynamodb::config::Intercept for ProxyInterceptorForLambda {
     fn name(&self) -> &'static str {
-        "Proxy"
+        "ProxyForLambda"
     }
 
     fn modify_before_transmit(
@@ -23,20 +23,25 @@ impl aws_sdk_dynamodb::config::Intercept for ProxyInterceptor {
         _cfg: &mut aws_sdk_dynamodb::config::ConfigBag,
     ) -> Result<(), aws_sdk_dynamodb::error::BoxError> {
         let requested = context.request().uri().to_string();
-        log::trace!("replacing {requested} with {proxy}", proxy = self.proxy_uri);
-        // Set the request uri to the proxy uri. This is after the request is signed, so this request
-        // is proxyable and secure against modification. Make sure you trust the proxy to make this request!
+        log::debug!("replacing {requested} with {proxy}", proxy = self.proxy_uri);
         *context.request_mut().uri_mut() = self
             .proxy_uri
             .clone()
             .try_into()
             .expect("must be a valid uri");
 
-        // Proxy uses x-uri to replace the original uri when it needs to forward the request
         context
             .request_mut()
             .headers_mut()
             .insert("x-uri", requested);
+
+        // Lambda eats sigv4 headers, so we need to rename them (then unrename in the lambda)
+        let headers = context.request_mut().headers_mut();
+        let headers_clone = headers.clone();
+        for (k, _v) in headers_clone.into_iter() {
+            let v = headers.remove(k);
+            headers.insert(format!("hahaha-{k}"), v.unwrap_or_default());
+        }
 
         Ok(())
     }
