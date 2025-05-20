@@ -1,12 +1,24 @@
+use std::borrow::Cow;
+
 /// I have to modify the request uri after it is signed. It is the Function's job to replace
 /// the request uri with x-uri.
 #[derive(Debug)]
 pub struct ProxyInterceptor {
     proxy_uri: String,
+    auth_header_name: Cow<'static, str>,
+    auth_header_value: Cow<'static, str>,
 }
 impl ProxyInterceptor {
-    pub fn new(value: String) -> Self {
-        Self { proxy_uri: value }
+    pub fn new(
+        value: String,
+        auth_header_name: Cow<'static, str>,
+        auth_header_value: Cow<'static, str>,
+    ) -> Self {
+        Self {
+            proxy_uri: value,
+            auth_header_name,
+            auth_header_value,
+        }
     }
 }
 impl aws_sdk_dynamodb::config::Intercept for ProxyInterceptor {
@@ -37,6 +49,12 @@ impl aws_sdk_dynamodb::config::Intercept for ProxyInterceptor {
             .request_mut()
             .headers_mut()
             .insert("x-uri", requested);
+
+        // Include the auth header for the proxy
+        context.request_mut().headers_mut().insert(
+            self.auth_header_name.clone(),
+            self.auth_header_value.clone(),
+        );
 
         Ok(())
     }

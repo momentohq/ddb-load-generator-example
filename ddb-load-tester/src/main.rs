@@ -46,11 +46,7 @@ fn main() {
 
 async fn amain(args: Args) {
     let config = aws_config::load_defaults(BehaviorVersion::latest()).await;
-    let mut config =
-        aws_sdk_dynamodb::config::Builder::from(&config).interceptor(HeaderInterceptor::new(
-            "x-momento-authorization".to_string(),
-            std::env::var("MOMENTO_AUTH_TOKEN").expect("must set MOMENTO_AUTH_TOKEN"),
-        ));
+    let mut config = aws_sdk_dynamodb::config::Builder::from(&config);
     if let Some(service_log) = &args.service_log {
         log::info!("using service log level: {service_log}");
         config = config.interceptor(HeaderInterceptor::new(
@@ -69,7 +65,13 @@ async fn amain(args: Args) {
             // lambda requires a special case interceptor
             config.interceptor(ProxyInterceptorForLambda::new(accelerator_url.clone()))
         } else {
-            config.interceptor(ProxyInterceptor::new(accelerator_url.clone()))
+            config.interceptor(ProxyInterceptor::new(
+                accelerator_url.clone(),
+                "x-momento-authorization".into(),
+                std::env::var("MOMENTO_AUTH_TOKEN")
+                    .expect("must set MOMENTO_AUTH_TOKEN")
+                    .into(),
+            ))
         }
     } else {
         config
